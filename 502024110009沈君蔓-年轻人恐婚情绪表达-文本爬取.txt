@@ -1,0 +1,39 @@
+"""发送请求"""
+# 导入数据请求模块
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+
+# 模拟(伪装）浏览器
+headers = {
+    'Cookie':'SCF=ApFTjLtVszbTRF-b5hzim6XcpvMp4dNgJ_pbo2dT0WxKK82_ec4mGzOxoMvZGXlA9Wq2yVngS3oWHr_kcGrhUBo.; SINAGLOBAL=8927934985421.605.1746883888160; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WFPrw1FdV1JSznq5b7rlFFz5JpX5KMhUgL.FoMN1K-cS0M7Sh.2dJLoIXnLxK-L1K5L1heLxKnL1hzL1h.LxKML1-2L1hBLxK-L1h-L1KBLxK-LB-BL1K5LxKBLBonL12BLxK.L1K-LB.qLxKqLB-qL1-zt; UOR=,,www.baidu.com; ALF=1752400300; SUB=_2A25FT4T6DeRhGeFJ4lcX9ynMzzWIHXVmJJgyrDV8PUJbkNAbLWjmkW1NfqwHImARzrn_iyY67oXoFfwRo4pImhSc; _s_tentry=weibo.com; Apache=1767469185016.175.1750072688211; ULV=1750072688215:17:6:1:1767469185016.175.1750072688211:1749720049575',
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
+}
+
+# 存储所有博文
+all_content = []
+
+# 可爬页数（可调整）
+for page in range(29,30):  
+    url = f'https://s.weibo.com/weibo?q=%23%E5%B9%B4%E8%BD%BB%E4%BA%BA%E6%81%90%E5%A9%9A%E6%81%90%E8%82%B2%E7%9A%84%E7%9C%9F%E6%AD%A3%E5%8E%9F%E5%9B%A0%E6%98%AF%E4%BB%80%E4%B9%88%23&page=30'
+    response = requests.get(url, headers=headers)
+    time.sleep(1)  # 防止访问过快
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        cards = soup.find_all('div', class_='card-wrap')
+        for card in cards:
+            content_tag = card.find('p', class_='txt')
+            if content_tag:
+                # 提取文本，并去除中间的“展开”字符
+                full_text = content_tag.get_text(separator='', strip=True)
+                full_text = full_text.replace('展开', '')  # 删除“展开”两字
+                all_content.append({'内容': full_text})
+    else:
+        print(f'第{page}页请求失败，状态码：{response.status_code}')
+
+# 保存到 Excel
+df = pd.DataFrame(all_content)
+df.to_excel('D:/text analysis/微博30.xlsx', index=False)
+print(f"成功保存 {len(df)} 条内容到 Excel。")
